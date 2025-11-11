@@ -1,5 +1,5 @@
 // Heuristic evaluation function
-function evaluateBoard(board) {
+function evaluateBoard(board, weights) {
     let aggregateHeight = 0;
     let maxHeight = 0;
     let completeLines = 0;
@@ -7,64 +7,75 @@ function evaluateBoard(board) {
     let bumpiness = 0;
     let density = 0;
     let columnHeights = new Array(nx).fill(0);
+
     function ch(x, y){
-        if ((x < 0) || (y < 0) || (x >= nx) || (y >= ny) || board[x][y] === 0){
-            density += 0;
+        if (x >= 0 && y >= 0 && x < nx && y < ny && board[x][y] !== 0){
+            density += 1;
         }
-        density += 1;
     }
-    // Calculate density 
+
+    // density
     for (let y = 0; y < ny; y++){
         for (let x = 0; x < nx; x++){
             if (board[x][y] != 0){
-                ch(x-1, y-1);ch(x-1, y);ch(x-1,y+1);ch(x,y-1);ch(x,y+1);ch(x+1,y-1);ch(x+1,y);ch(x+1,y+1);
+                ch(x-1, y-1); ch(x-1, y); ch(x-1, y+1);
+                ch(x, y-1);   ch(x, y+1);
+                ch(x+1, y-1); ch(x+1, y); ch(x+1, y+1);
             }
         }
     }
-    // Calculate aggregate height and column heights
-    for (let y = 0; y < ny; y++) {
-        for (let x = 0; x < nx; x++) {
+    density = density / (nx * ny);
+
+    // column heights
+    for (let x = 0; x < nx; x++) {
+        for (let y = 0; y < ny; y++) {
             if (board[x][y] !== 0) {
                 columnHeights[x] = ny - y;
                 aggregateHeight += columnHeights[x];
-                maxHeight = maxHeight > columnHeights[x] ? maxHeight : columnHeights[x];
+                if (columnHeights[x] > maxHeight)
+                    maxHeight = columnHeights[x];
                 break;
             }
         }
     }
 
-    // Calculate complete lines
+    // complete lines
     for (let y = 0; y < ny; y++) {
-        var complete = true;
+        let complete = true;
         for (let x = 0; x < nx; x++) {
-            if (board[x][y] === 0) {
-                complete = false;
-                break;
-            }
+            if (board[x][y] === 0) { complete = false; break; }
         }
-        if (complete)
-            completeLines++;
+        if (complete) completeLines++;
     }
 
-    // Calculate holes
+    // holes
     for (let x = 0; x < nx; x++) {
         let blockFound = false;
         for (let y = 0; y < ny; y++) {
-            if (board[x][y] !== 0) {
-                blockFound = true;
-            } else if (blockFound && board[x][y] === 0) {
-                holes++;
-            }
+            if (board[x][y] !== 0) blockFound = true;
+            else if (blockFound) holes++;
         }
     }
 
-    // Calculate bumpiness
+    // bumpiness
     for (let x = 0; x < nx - 1; x++) {
         bumpiness += Math.abs(columnHeights[x] - columnHeights[x + 1]);
     }
 
-    // norm features
-    return -0.51 * aggregateHeight + 0.76 * completeLines - 0.36 * holes - 0.18 * bumpiness - 5 * maxHeight + 0.1 * density;
+    const featVals = [
+        aggregateHeight ,
+        completeLines,
+        holes,
+        bumpiness,
+        maxHeight,
+        density
+    ];
+
+    let score = 0;
+    for (let i = 0; i < weights.length; i++)
+        score += featVals[i] * weights[i];
+
+    return score;
 }
 
 // Function to deep copy the blocks array
@@ -99,12 +110,12 @@ function getPossibleMoves(piece) {
 }
 
 // Select the best move based on heuristic evaluation
-function selectBestMove(piece, board) {
+function selectBestMove(piece, weights) {
     let moves = getPossibleMoves(piece);
     let bestMove = null;
     let bestScore = -Infinity;
     moves.forEach(move => {
-        let score = evaluateBoard(move.board);
+        let score = evaluateBoard(move.board, weights);
         if (score > bestScore) {
             bestScore = score;
             bestMove = move;

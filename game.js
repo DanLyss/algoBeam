@@ -409,8 +409,8 @@
         ctx.strokeRect(x*dx, y*dy, dx, dy)
     }
 
-    function agent() {
-        let bestMove = selectBestMove(current);
+    function agent(weights) {
+        let bestMove = selectBestMove(current, weights);
         if (bestMove) {
             let dropY = getDropPosition(bestMove.piece, bestMove.x);
             current.x = bestMove.x;
@@ -424,7 +424,7 @@
 // -----------------------------------------------------------------------------
 // AI Autoplay
 // -----------------------------------------------------------------------------
-function autoAI(rounds = 100) {
+function autoAI(rounds = 100, weights) {
   let start = timestamp();
   let scores = [];
 
@@ -437,14 +437,50 @@ function autoAI(rounds = 100) {
   for (let i = 0; i < rounds; i++) {
     play();
     while (playing) {
-      agent();
+      agent(weights);
     }
     scores.push(score);
   }
 
-  console.log(
-    "AI finished", rounds, "games",
-    "average score:", average(scores).toFixed(1),
-    "elapsed:", ((timestamp() - start)/1000).toFixed(2), "s"
-  );
+  return average(scores);
+}
+
+// Annealing 
+
+function simulatedAnnealingCompact({
+    initWeights = Array(6).fill(0).map(() => (Math.random() * 2 - 1) * 0.05),
+    rounds = 5,
+    iterations = 1000,
+    tempStart = 1.0,
+    tempEnd = 0.01,
+    baseStep = 0.2,
+    adapt = 0.1
+} = {}) {
+    let w = [...initWeights];
+    let best = [...w];
+    let bestScore = autoAI(rounds, w);
+    let currScore = bestScore;
+    let stepScales = w.map(() => baseStep * (0.5 + Math.random()));
+
+    for (let i = 0; i < iterations; i++) {
+        const T = tempStart * Math.pow(tempEnd / tempStart, i / iterations);
+        const cand = w.map((wj, j) => wj + (Math.random() * 2 - 1) * stepScales[j] * T);
+        const score = autoAI(rounds, cand);
+        const d = score - currScore;
+        const ok = d > 0 || Math.exp(d / T) > Math.random();
+
+        if (ok) {
+            w = cand; currScore = score;
+            stepScales = stepScales.map(s => s * (1 + adapt * 0.5));
+            if (score > bestScore) { best = cand; bestScore = score; }
+        } else {
+            stepScales = stepScales.map(s => s * (1 - adapt * 0.3));
+        }
+
+        if (i % 50 === 0)
+            console.log(`i=${i} T=${T.toFixed(3)} best=${bestScore.toFixed(1)} steps=${stepScales.map(s=>s.toFixed(3))} w=[${w.map(v=>v.toFixed(3)).join(', ')}]`);
+    }
+
+    console.log("Best:", best, "Score:", bestScore.toFixed(2));
+    return best;
 }
