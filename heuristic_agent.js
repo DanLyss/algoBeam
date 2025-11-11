@@ -1,17 +1,33 @@
 // Heuristic evaluation function
 function evaluateBoard(board) {
     let aggregateHeight = 0;
+    let maxHeight = 0;
     let completeLines = 0;
     let holes = 0;
     let bumpiness = 0;
+    let density = 0;
     let columnHeights = new Array(nx).fill(0);
-
+    function ch(x, y){
+        if ((x < 0) || (y < 0) || (x >= nx) || (y >= ny) || board[x][y] === 0){
+            density += 0;
+        }
+        density += 1;
+    }
+    // Calculate density 
+    for (let y = 0; y < ny; y++){
+        for (let x = 0; x < nx; x++){
+            if (board[x][y] != 0){
+                ch(x-1, y-1);ch(x-1, y);ch(x-1,y+1);ch(x,y-1);ch(x,y+1);ch(x+1,y-1);ch(x+1,y);ch(x+1,y+1);
+            }
+        }
+    }
     // Calculate aggregate height and column heights
     for (let y = 0; y < ny; y++) {
         for (let x = 0; x < nx; x++) {
             if (board[x][y] !== 0) {
                 columnHeights[x] = ny - y;
                 aggregateHeight += columnHeights[x];
+                maxHeight = maxHeight > columnHeights[x] ? maxHeight : columnHeights[x];
                 break;
             }
         }
@@ -47,8 +63,8 @@ function evaluateBoard(board) {
         bumpiness += Math.abs(columnHeights[x] - columnHeights[x + 1]);
     }
 
-    // Combine features into a heuristic score
-    return -0.51 * aggregateHeight + 0.76 * completeLines - 0.36 * holes - 0.18 * bumpiness;
+    // norm features
+    return -0.51 * aggregateHeight + 0.76 * completeLines - 0.36 * holes - 0.18 * bumpiness - 5 * maxHeight + 0.1 * density;
 }
 
 // Function to deep copy the blocks array
