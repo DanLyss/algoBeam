@@ -302,7 +302,7 @@
 
     function removeLines() {
         var x, y, complete, n = 0;
-        for(y = ny ; y > 0 ; --y) {
+        for (y = ny - 1 ; y >= 0 ; --y) {
             complete = true;
             for(x = 0 ; x < nx ; ++x) {
                 if (!getBlock(x, y)) {
