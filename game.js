@@ -449,8 +449,8 @@ function autoAI(rounds = 100, weights) {
 
 function simulatedAnnealingCompact({
     initWeights = Array(6).fill(0).map(() => (Math.random() * 2 - 1) * 0.05),
-    rounds = 5,
-    iterations = 1000,
+    rounds = 50,
+    iterations = 300,
     tempStart = 1.0,
     tempEnd = 0.01,
     baseStep = 0.2,
