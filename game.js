@@ -419,3 +419,32 @@
             drop();
         }
     }
+
+
+// -----------------------------------------------------------------------------
+// AI Autoplay
+// -----------------------------------------------------------------------------
+function autoAI(rounds = 100) {
+  let start = timestamp();
+  let scores = [];
+
+  function average(arr) {
+    let s = 0;
+    for (let i = 0; i < arr.length; i++) s += arr[i];
+    return s / arr.length;
+  }
+
+  for (let i = 0; i < rounds; i++) {
+    play();
+    while (playing) {
+      agent();
+    }
+    scores.push(score);
+  }
+
+  console.log(
+    "AI finished", rounds, "games",
+    "average score:", average(scores).toFixed(1),
+    "elapsed:", ((timestamp() - start)/1000).toFixed(2), "s"
+  );
+}
