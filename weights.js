@@ -1,1 +1,10 @@
-//weights [0.04191984618221969, 0.5368334594869711, -0.033441578208617914, -0.01632253294371094, -0.3407228041544318, -0.25687085326137177]
+var WWeights = [ 7,15,-0.1,-5,-10,3,0,0,0]
+        // almostcompleteLines ,
+        // completeLines,
+        // holes,
+        // bumpiness,
+        // maxHeight,
+        // density,
+        // upperRowNum,
+        // rowBelowUpper,
+        // row2layers

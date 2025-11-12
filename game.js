@@ -37,6 +37,7 @@
     // game constants
     //-------------------------------------------------------------------------
 
+    
     var KEY     = { ESC: 27, SPACE: 32, LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 },
     DIR     = { UP: 0, RIGHT: 1, DOWN: 2, LEFT: 3, MIN: 0, MAX: 3, AI: -1},
     stats   = new Stats(),
@@ -250,7 +251,7 @@
             case DIR.RIGHT: move(DIR.RIGHT); break;
             case DIR.UP:    rotate();        break;
             case DIR.DOWN:  drop();          break;
-            case DIR.AI:    agent();         break;
+            case DIR.AI:    agentBeam();         break;
         }
     }
 
@@ -409,7 +410,7 @@
         ctx.strokeRect(x*dx, y*dy, dx, dy)
     }
 
-    function agent(weights) {
+    function agent(weights=WWeights) {
         let bestMove = selectBestMove(current, weights);
         if (bestMove) {
             let dropY = getDropPosition(bestMove.piece, bestMove.x);
@@ -420,11 +421,23 @@
         }
     }
 
+    function agentBeam(weights=WWeights) {
+        const move = beamSearchMove(current, next, weights, 2, 10);
+        if (move) {
+            current.dir = move.dir;
+            current.x = move.x;
+            const dropY = getDropPosition(current, move.x);
+            current.y = dropY;
+            drop();
+        }
+        }
+
+
 
 // -----------------------------------------------------------------------------
 // AI Autoplay
 // -----------------------------------------------------------------------------
-function autoAI(rounds = 100, weights) {
+function autoAI(rounds = 100, weights=WWeights) {
   let start = timestamp();
   let scores = [];
 
@@ -433,11 +446,12 @@ function autoAI(rounds = 100, weights) {
     for (let i = 0; i < arr.length; i++) s += arr[i];
     return s / arr.length;
   }
-
+  run();
   for (let i = 0; i < rounds; i++) {
+    reset();
     play();
     while (playing) {
-      agent(weights);
+      agentBeam(weights);
     }
     scores.push(score);
   }
